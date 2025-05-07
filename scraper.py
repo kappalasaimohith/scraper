@@ -3,17 +3,14 @@ from bs4 import BeautifulSoup
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 import re
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
 import torch
 import os
 
+# Load summarization model
 def load_models():
     model_name = "t5-small"
     local_cache_dir = os.path.join(os.getcwd(), "local_model_cache")
-
     os.makedirs(local_cache_dir, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,31 +21,25 @@ def load_models():
     device_index = 0 if torch.cuda.is_available() else -1
     summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=device_index)
     return summarizer
+
 summarizer = load_models()
 
-def setup_chrome_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    return driver
+# Utility: Fetch page with headers
+def get_page_content(url):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/114.0.0.0 Safari/537.36"
+        )
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return BeautifulSoup(response.text, "html.parser")
+    else:
+        raise Exception(f"Failed to fetch page. Status code: {response.status_code}")
 
-def get_flipkart_content(url):
-    driver = setup_chrome_driver()
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    driver.quit()
-    return soup
-
-def get_amazon_content(url):
-    driver = setup_chrome_driver()
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    driver.quit()
-    return soup
-
+# Clean ₹ values
 def clean_price(value):
     clean_value = re.sub(r"[^\d.]", "", value)
     try:
@@ -56,6 +47,7 @@ def clean_price(value):
     except:
         return None
 
+# Extract Amazon info
 def extract_amazon_data(soup):
     title = soup.select_one("#productTitle")
     price = soup.select_one(".a-price .a-offscreen")
@@ -83,6 +75,7 @@ def extract_amazon_data(soup):
         "Key Features": key_features.get_text(separator="\n", strip=True) if key_features else "N/A",
     }
 
+# Extract Flipkart info
 def extract_flipkart_data(soup):
     title = soup.select_one("span.B_NuCI")
     price = soup.select_one("div._30jeq3._16Jk6d")
@@ -110,6 +103,7 @@ def extract_flipkart_data(soup):
         "Key Features": key_features.get_text(separator="\n", strip=True) if key_features else "N/A",
     }
 
+# Streamlit App
 st.title("🔗 Ecommerce Product Scraper & Analyzer")
 st.markdown("This app scrapes product details from Amazon and summarizes the content.")
 
@@ -119,11 +113,11 @@ if url:
     try:
         st.info("Fetching content...")
 
+        soup = get_page_content(url)
+
         if "amazon" in url.lower():
-            soup = get_amazon_content(url)
             extracted_info = extract_amazon_data(soup)
         elif "flipkart" in url.lower():
-            soup = get_flipkart_content(url)
             extracted_info = extract_flipkart_data(soup)
         else:
             st.warning("The URL is neither an Amazon nor a Flipkart product page.")
@@ -134,7 +128,7 @@ if url:
 
         main_content = "\n".join([f"{key}: {value}" for key, value in extracted_info.items()])
         clean_text = " ".join(main_content.split())
-        truncated_text = clean_text[:512]  
+        truncated_text = clean_text[:512]
 
         with st.expander("🔍 Show extracted text"):
             st.write(truncated_text)
@@ -162,7 +156,6 @@ if url:
         product_df = pd.DataFrame(product_details)
         st.dataframe(product_df, use_container_width=True)
 
-        # Display key features
         if 'Key Features' in extracted_info:
             st.subheader("🔑 Key Features")
             for feature in extracted_info['Key Features'].split("\n"):
