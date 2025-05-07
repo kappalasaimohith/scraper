@@ -111,6 +111,7 @@ def extract_flipkart_data(soup):
     }
 
 st.title("🔗 Ecommerce Product Scraper & Analyzer")
+st.markdown("This app scrapes product details from Amazon and summarizes the content.")
 
 url = st.text_input("Enter a URL to summarize", "")
 
