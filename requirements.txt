@@ -1,0 +1,7 @@
+transformers
+torch
+requests
+selenium
+beautifulsoup4
+streamlit
+webdriver-manager
