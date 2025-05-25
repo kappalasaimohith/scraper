@@ -16,7 +16,8 @@ def load_models():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=local_cache_dir)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir).to(device)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir)
+    model.to(device)
 
     device_index = 0 if torch.cuda.is_available() else -1
     summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=device_index)
