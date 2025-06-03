@@ -6,6 +6,7 @@ import streamlit as st
 import requests
 import torch
 import os
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
 
 # Load summarization model
 def load_models():
@@ -16,7 +17,7 @@ def load_models():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=local_cache_dir)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir, low_cpu_mem_usage=False)
     model.to(device)
 
     device_index = 0 if torch.cuda.is_available() else -1
