@@ -27,7 +27,7 @@ def load_models():
             st.warning(f"Failed to load custom weights: {e}. Using pretrained weights instead.")
     else:
         st.warning(f"Custom weights not found at {weights_path}. Using pretrained weights.")
-    model.to(device)
+    # model.to(device)
 
     device_index = 0 if torch.cuda.is_available() else -1
     summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=device_index)
