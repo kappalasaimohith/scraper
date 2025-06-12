@@ -18,6 +18,7 @@ def load_models():
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=local_cache_dir)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir, low_cpu_mem_usage=False)
+    model.load_state_dict(torch.load("path_to_model_weights.pth"))
     model.to(device)
 
     device_index = 0 if torch.cuda.is_available() else -1
