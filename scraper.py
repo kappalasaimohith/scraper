@@ -20,7 +20,11 @@ def load_models():
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir, low_cpu_mem_usage=False)
     weights_path = "./local_model_cache/t5-small_weights.pth"
     if os.path.exists(weights_path):
-        model.load_state_dict(torch.load(weights_path))
+        try:
+            state_dict = torch.load(weights_path, map_location=device)
+            model.load_state_dict(state_dict)
+        except Exception as e:
+            st.warning(f"Failed to load custom weights: {e}. Using pretrained weights instead.")
     else:
         st.warning(f"Custom weights not found at {weights_path}. Using pretrained weights.")
     model.to(device)
@@ -29,7 +33,8 @@ def load_models():
     summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=device_index)
     return summarizer
 
-summarizer = load_models()
+with st.spinner("Loading summarization model..."):
+    summarizer = load_models()
 
 # Utility: Fetch page with headers
 def get_page_content(url):
