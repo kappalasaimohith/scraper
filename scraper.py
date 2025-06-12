@@ -18,16 +18,16 @@ def load_models():
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=local_cache_dir)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=local_cache_dir, low_cpu_mem_usage=False)
-    weights_path = "./local_model_cache/t5-small_weights.pth"
-    if os.path.exists(weights_path):
-        try:
-            state_dict = torch.load(weights_path, map_location=device)
-            model.load_state_dict(state_dict)
-        except Exception as e:
-            st.warning(f"Failed to load custom weights: {e}. Using pretrained weights instead.")
-    else:
-        st.warning(f"Custom weights not found at {weights_path}. Using pretrained weights.")
-    # model.to(device)
+    # weights_path = "./local_model_cache/t5-small_weights.pth"
+    # if os.path.exists(weights_path):
+    #     try:
+    #         state_dict = torch.load(weights_path, map_location=device)
+    #         model.load_state_dict(state_dict)
+    #     except Exception as e:
+    #         st.warning(f"Failed to load custom weights: {e}. Using pretrained weights instead.")
+    # else:
+    #     st.warning(f"Custom weights not found at {weights_path}. Using pretrained weights.")
+    model.to(device)
 
     device_index = 0 if torch.cuda.is_available() else -1
     summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=device_index)
